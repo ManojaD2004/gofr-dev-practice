@@ -1,13 +1,12 @@
 package main
 
 import (
-    "gofr.dev/pkg/gofr" 
-    "fmt"
+	"gofr.dev/pkg/gofr"
+	"errors"
+	"fmt"
+	"os"
+	t "github.com/ManojaD2004/types"
 )
-
-type New1 struct {
-	Name string `json:"name"`
-}
 
 func main() {
 	// initialise gofr object
@@ -17,13 +16,17 @@ func main() {
 		return "Hello World!", nil
 	})
     app.POST("/greet1", func(c *gofr.Context) (interface{}, error) {
-        p := New1{}
+        p := t.New1{}
         c.Bind(&p)
-        fmt.Println("%v The changes body", p)
-        return "Hello World!", nil
+		// Wow many functionality
+        fmt.Println(p, "The changes body", os.Getenv("SOME_ENV"))
+		// Another way of sending response
+        // return map[string]string{"hello": "Hello World"}, nil
+		err := errors.New("some error")
+		return t.New1{Name: "Hello World"}, err
     })
 	app.GET("/greet1", func(ctx *gofr.Context) (interface{}, error) {
-		return New1{"Hello World"}, nil
+		return t.New1{Name: "Hello World"}, nil
 	})
 
 	// Runs the server, it will listen on the default port 8000.
