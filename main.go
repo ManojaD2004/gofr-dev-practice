@@ -6,6 +6,7 @@ import (
 	t "github.com/ManojaD2004/types"
 	"github.com/redis/go-redis/v9"
 	"gofr.dev/pkg/gofr"
+	"gofr.dev/examples/using-add-rest-handlers/migrations"
 	"os"
 	"time"
 )
@@ -14,6 +15,18 @@ type Customer struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
+
+type user struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"  sql:"not_null"`
+	Age        int    `json:"age"`
+	IsEmployed bool   `json:"isEmployed"`
+}
+
+// GetAll : User can overwrite the specific handlers by implementing them like this
+// func (u *user) GetAll(c *gofr.Context) (interface{}, error) {
+// 	return "user GetAll called", nil
+// }
 
 func main() {
 	// initialise gofr object
@@ -98,6 +111,14 @@ func main() {
 		return customers, nil
 	})
 
+	// Add migrations to run
+	app.Migrate(migrations.All())
+
+	// AddRESTHandlers creates CRUD handles for the given entity
+	err := app.AddRESTHandlers(&user{})
+	if err != nil {
+		return
+	}
 	// it can be over-ridden through configs
 	app.Run()
 }
