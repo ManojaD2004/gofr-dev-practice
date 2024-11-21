@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ManojaD2004/route"
 	t "github.com/ManojaD2004/types"
 	"github.com/redis/go-redis/v9"
 	"gofr.dev/examples/using-add-rest-handlers/migrations"
@@ -108,6 +109,7 @@ func main() {
 
 		return val, err
 	})
+	app.POST("/user", route.UserGetRoute)
 
 	app.GET("/customer", func(ctx *gofr.Context) (interface{}, error) {
 		var customers []Customer
