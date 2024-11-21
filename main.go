@@ -14,6 +14,7 @@ import (
 	"gofr.dev/examples/using-add-rest-handlers/migrations"
 	"gofr.dev/pkg/gofr"
 	"gofr.dev/pkg/gofr/container"
+	"gofr.dev/pkg/gofr/websocket"
 )
 
 type Customer struct {
@@ -58,6 +59,17 @@ func main() {
 		fmt.Println(p, "The changes body", os.Getenv("SOME_ENV"))
 		// Another way of sending response
 		// return map[string]string{"hello": "Hello World"}, nil
+		entries, _ := c.File.ReadDir("./")
+
+		for _, entry := range entries {
+			entryType := "File"
+
+			if entry.IsDir() {
+				entryType = "Dir"
+			}
+
+			fmt.Printf("%v: %v Size: %v Last Modified Time : %v\n", entryType, entry.Name(), entry.Size(), entry.ModTime())
+		}
 		c.Metrics().IncrementCounter(c, "transaction_success")
 		span := c.Trace("my-custom-span")
 		defer span.End()
@@ -133,11 +145,40 @@ func main() {
 	// app.AddCronJob("*/30 * * * * *", "30 second job", func(ctx *gofr.Context) {
 	// 	fmt.Println("current time is", time.Now())
 	// })
-	app.EnableBasicAuth("username:password")
+	// app.EnableBasicAuth("username" ,"password")
 	app.UseMiddlewareWithContainer(customMiddleware)
-	app.AddHTTPService("test-api-service", "https://jsonplaceholder.typicode.com")  
+	app.AddHTTPService("test-api-service", "https://jsonplaceholder.typicode.com")
+	wsUpgrader := websocket.NewWSUpgrader(
+		websocket.WithHandshakeTimeout(5*time.Second), // Set handshake timeout
+		websocket.WithReadBufferSize(2048),            // Set read buffer size
+		websocket.WithWriteBufferSize(2048),           // Set write buffer size
+		websocket.WithSubprotocols("chat", "binary"),  // Specify subprotocols
+		websocket.WithCompression(),                   // Enable compression
+	)
+
+	app.OverrideWebsocketUpgrader(wsUpgrader)
+	app.WebSocket("/ws", WSHandler)
 	// it can be over-ridden through configs
 	app.Run()
+}
+
+func WSHandler(ctx *gofr.Context) (interface{}, error) {
+	var message string
+
+	err := ctx.Bind(&message)
+	if err != nil {
+		ctx.Logger.Errorf("Error binding message: %v", err)
+		return nil, err
+	}
+
+	ctx.Logger.Infof("Received message: %s", message)
+
+	err = ctx.WriteMessageToSocket("Hello! GoFr")
+	if err != nil {
+		return nil, err
+	}
+
+	return message, nil
 }
 
 func customMiddleware(c *container.Container, handler http.Handler) http.Handler {
@@ -148,28 +189,28 @@ func customMiddleware(c *container.Container, handler http.Handler) http.Handler
 }
 
 type TestApiType struct {
-  UserId int `json:"userId"`
-  Id int `json:"id"`
-  Title string `json:"title"`
-  Completed bool `json:"completed"`
+	UserId    int    `json:"userId"`
+	Id        int    `json:"id"`
+	Title     string `json:"title"`
+	Completed bool   `json:"completed"`
 }
 
-func TestApiService(ctx *gofr.Context) (interface{}, error) {  
+func TestApiService(ctx *gofr.Context) (interface{}, error) {
 	fmt.Println("I am In test-api")
-    testApi := ctx.GetHTTPService("test-api-service")  
-    // Use the Get method to call the GET /user endpoint of payments service  
-    resp, err := testApi.Get(ctx, "todos/1", nil)  
-    if err != nil {  
-        return nil, err  
-    }  
-  
-    defer resp.Body.Close()  
-  
-    body, err := io.ReadAll(resp.Body)  
-    if err != nil {  
-        return nil, err  
-    }  
+	testApi := ctx.GetHTTPService("test-api-service")
+	// Use the Get method to call the GET /user endpoint of payments service
+	resp, err := testApi.Get(ctx, "todos/1", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	ret := TestApiType{}
 	json.Unmarshal(body, &ret)
-    return ret, nil  
+	return ret, nil
 }

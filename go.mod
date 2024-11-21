@@ -5,6 +5,7 @@ go 1.23.3
 require (
 	github.com/redis/go-redis/v9 v9.7.0
 	gofr.dev v1.27.1
+	gofr.dev/pkg/gofr/datasource/file/ftp v0.1.0
 )
 
 require (
@@ -39,7 +40,10 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.23.0 // indirect
+	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/jlaffaye/ftp v0.2.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/lib/pq v1.10.9 // indirect
