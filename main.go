@@ -1,14 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	t "github.com/ManojaD2004/types"
-	"github.com/redis/go-redis/v9"
-	"gofr.dev/pkg/gofr"
-	"gofr.dev/examples/using-add-rest-handlers/migrations"
+	"io"
+	"net/http"
 	"os"
 	"time"
+
+	t "github.com/ManojaD2004/types"
+	"github.com/redis/go-redis/v9"
+	"gofr.dev/examples/using-add-rest-handlers/migrations"
+	"gofr.dev/pkg/gofr"
+	"gofr.dev/pkg/gofr/container"
 )
 
 type Customer struct {
@@ -54,6 +59,8 @@ func main() {
 		// Another way of sending response
 		// return map[string]string{"hello": "Hello World"}, nil
 		c.Metrics().IncrementCounter(c, "transaction_success")
+		span := c.Trace("my-custom-span")
+		defer span.End()
 		return t.New1{Name: "Hello World"}, nil
 	})
 	app.GET("/greet1", func(ctx *gofr.Context) (interface{}, error) {
@@ -90,7 +97,6 @@ func main() {
 		return val, err
 	})
 
-	
 	app.GET("/customer", func(ctx *gofr.Context) (interface{}, error) {
 		var customers []Customer
 
@@ -113,6 +119,7 @@ func main() {
 		return customers, nil
 	})
 
+	app.POST("/test-api", TestApiService)
 	// Add migrations to run
 	app.Migrate(migrations.All())
 
@@ -122,9 +129,47 @@ func main() {
 		return
 	}
 
-	app.AddCronJob("*/31 * * * * *", "3q second job", func(ctx *gofr.Context) {
-		fmt.Println("current time is", time.Now())
-	})
+	// Cron Jobs
+	// app.AddCronJob("*/30 * * * * *", "30 second job", func(ctx *gofr.Context) {
+	// 	fmt.Println("current time is", time.Now())
+	// })
+	app.EnableBasicAuth("username:password")
+	app.UseMiddlewareWithContainer(customMiddleware)
+	app.AddHTTPService("test-api-service", "https://jsonplaceholder.typicode.com")  
 	// it can be over-ridden through configs
 	app.Run()
+}
+
+func customMiddleware(c *container.Container, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c.Logger.Log("Hey! Welcome to GoFr")
+		handler.ServeHTTP(w, r)
+	})
+}
+
+type TestApiType struct {
+  UserId int `json:"userId"`
+  Id int `json:"id"`
+  Title string `json:"title"`
+  Completed bool `json:"completed"`
+}
+
+func TestApiService(ctx *gofr.Context) (interface{}, error) {  
+	fmt.Println("I am In test-api")
+    testApi := ctx.GetHTTPService("test-api-service")  
+    // Use the Get method to call the GET /user endpoint of payments service  
+    resp, err := testApi.Get(ctx, "todos/1", nil)  
+    if err != nil {  
+        return nil, err  
+    }  
+  
+    defer resp.Body.Close()  
+  
+    body, err := io.ReadAll(resp.Body)  
+    if err != nil {  
+        return nil, err  
+    }  
+	ret := TestApiType{}
+	json.Unmarshal(body, &ret)
+    return ret, nil  
 }

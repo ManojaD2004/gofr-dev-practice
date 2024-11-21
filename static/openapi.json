@@ -1,0 +1,155 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "To-Do List API",
+        "version": "1.0.0",
+        "description": "An API for managing a to-do list."
+    },
+    "servers": [
+        {
+            "url": "https://api.example.com/v1",
+            "description": "Production Server"
+        },
+        {
+            "url": "https://staging-api.example.com/v1",
+            "description": "Staging Server"
+        }
+    ],
+    "paths": {
+        "/todos": {
+            "get": {
+                "summary": "Get all to-do items",
+                "responses": {
+                    "200": {
+                        "description": "A list of to-do items",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ToDo"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Create a new to-do item",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewToDo"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The created to-do item",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ToDo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/todos/{id}": {
+            "get": {
+                "summary": "Get a to-do item by ID",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The ID of the to-do item"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A single to-do item",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ToDo"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "To-do item not found"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete a to-do item by ID",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The ID of the to-do item"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "To-do item deleted"
+                    },
+                    "404": {
+                        "description": "To-do item not found"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ToDo": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "example": "12345"
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Buy groceries"
+                    },
+                    "completed": {
+                        "type": "boolean",
+                        "example": false
+                    }
+                }
+            },
+            "NewToDo": {
+                "type": "object",
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "example": "Buy groceries"
+                    },
+                    "completed": {
+                        "type": "boolean",
+                        "example": false
+                    }
+                }
+            }
+        }
+    }
+}
