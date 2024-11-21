@@ -32,6 +32,7 @@ func main() {
 	// initialise gofr object
 	app := gofr.New()
 	// register route greet
+	app.Metrics().NewCounter("transaction_success", "used to track the count of successful transactions")
 	app.GET("/greet", func(ctx *gofr.Context) (interface{}, error) {
 		return "Hello World!", nil
 	})
@@ -52,8 +53,8 @@ func main() {
 		fmt.Println(p, "The changes body", os.Getenv("SOME_ENV"))
 		// Another way of sending response
 		// return map[string]string{"hello": "Hello World"}, nil
-		err := errors.New("some error")
-		return t.New1{Name: "Hello World"}, err
+		c.Metrics().IncrementCounter(c, "transaction_success")
+		return t.New1{Name: "Hello World"}, nil
 	})
 	app.GET("/greet1", func(ctx *gofr.Context) (interface{}, error) {
 		return t.New1{Name: "Hello World"}, nil
@@ -89,6 +90,7 @@ func main() {
 		return val, err
 	})
 
+	
 	app.GET("/customer", func(ctx *gofr.Context) (interface{}, error) {
 		var customers []Customer
 
@@ -119,6 +121,10 @@ func main() {
 	if err != nil {
 		return
 	}
+
+	app.AddCronJob("*/31 * * * * *", "3q second job", func(ctx *gofr.Context) {
+		fmt.Println("current time is", time.Now())
+	})
 	// it can be over-ridden through configs
 	app.Run()
 }
